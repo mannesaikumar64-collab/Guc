@@ -1,0 +1,86 @@
+:root {
+  --gold: #d4af37;
+  --red: #8b0000;
+  --cream: #fff4dc;
+  --dark: #3a1f00;
+}
+
+body {
+  margin: 0;
+  font-family: 'Georgia', serif;
+  background: linear-gradient(180deg, #4b0000 0%, #240000 100%);
+  color: var(--cream);
+}
+
+.temple-header {
+  padding: 16px;
+  border-bottom: 3px solid var(--gold);
+  background: radial-gradient(circle at top, #b22222, #5b0000);
+}
+
+h1, h2, h3, h4 {
+  color: var(--gold);
+}
+
+main {
+  padding: 16px;
+}
+
+.card {
+  border: 1px solid var(--gold);
+  background: rgba(255, 244, 220, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.compact input {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.grid4 {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.kpi p {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+input, button {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--gold);
+  background: #fff;
+  color: var(--dark);
+}
+
+button {
+  background: linear-gradient(180deg, #ffd34e, #d4af37);
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feed {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px dashed var(--gold);
+  padding: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+pre {
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}

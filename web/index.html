@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ganesh Utsava Management</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="temple-header">
+    <h1>🙏 Ganesh Utsava Management System</h1>
+    <div id="adminConfig" class="card compact">
+      <h3>Admin Config</h3>
+      <input id="apiUrl" placeholder="Apps Script Web App URL" />
+      <input id="apiSecret" placeholder="Shared Secret (optional)" />
+      <button onclick="saveConfig()">Save Config</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="loginSection" class="card">
+      <h2>Login</h2>
+      <input id="username" placeholder="Username" />
+      <input id="password" type="password" placeholder="Password" />
+      <input id="pin" placeholder="PIN (optional)" />
+      <button onclick="login()">Login</button>
+      <p id="loginMessage"></p>
+    </section>
+
+    <section id="dashboardSection" class="hidden">
+      <div class="grid4">
+        <div class="card kpi"><h4>Total Donations</h4><p id="kpiDonations">₹0</p></div>
+        <div class="card kpi"><h4>Total Expenses</h4><p id="kpiExpenses">₹0</p></div>
+        <div class="card kpi"><h4>Active Events</h4><p id="kpiEvents">0</p></div>
+        <div class="card kpi"><h4>Pending Approvals</h4><p id="kpiApprovals">0</p></div>
+      </div>
+
+      <div class="card">
+        <h3>Public Homepage Feed</h3>
+        <div id="homeFeed" class="feed"></div>
+      </div>
+
+      <div class="card">
+        <h3>Module Actions</h3>
+        <div class="actions">
+          <button onclick="loadTable('Events')">Events</button>
+          <button onclick="loadTable('Announcements')">Announcements</button>
+          <button onclick="loadTable('Donations')">Donations</button>
+          <button onclick="loadTable('LadduAuctions')">Laddu Auction</button>
+          <button onclick="loadTable('LadduWinners')">Laddu Winners</button>
+          <button onclick="loadTable('BudgetPlans')">Budgets</button>
+          <button onclick="loadTable('Assets')">Assets</button>
+          <button onclick="loadTable('Committee')">Committee</button>
+          <button onclick="loadTable('Mandali')">Mandali</button>
+          <button onclick="loadTable('Volunteers')">Volunteers</button>
+          <button onclick="loadTable('PoojaBookings')">Pooja</button>
+          <button onclick="loadTable('Documents')">Documents</button>
+          <button onclick="loadTable('SupportTickets')">Support</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Data Grid</h3>
+        <pre id="grid"></pre>
+      </div>
+
+      <div class="card">
+        <h3>Feature Tracker</h3>
+        <pre id="featureTracker"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
