@@ -3,7 +3,8 @@ const state = {
   apiSecret: '',
   token: '',
   user: null,
-  featureMatrix: {}
+  featureMatrix: {},
+  carouselTimer: null
 };
 
 function saveConfig() {
@@ -55,9 +56,29 @@ async function login() {
     await loadDashboard();
     await loadPublicHome();
     await loadFeatureTracker();
+    applyModuleRestrictions();
   } catch (e) {
     document.getElementById('loginMessage').innerText = e.message;
   }
+}
+
+function applyModuleRestrictions() {
+  const allowed = state.user?.role?.allowed_modules_json;
+  let modules = [];
+  try {
+    modules = typeof allowed === 'string' ? JSON.parse(allowed) : (Array.isArray(allowed) ? allowed : []);
+  } catch {
+    modules = [];
+  }
+
+  document.querySelectorAll('[data-module]').forEach(btn => {
+    if (!modules.length) {
+      btn.classList.remove('hidden');
+      return;
+    }
+    const visible = modules.includes(btn.getAttribute('data-module'));
+    btn.classList.toggle('hidden', !visible);
+  });
 }
 
 async function loadDashboard() {
@@ -80,6 +101,27 @@ async function loadPublicHome() {
   lines.push('=== Divine Banners ===');
   (data.banners || []).forEach(b => lines.push(`• ${b.title}: ${b.image_url}`));
   document.getElementById('homeFeed').innerText = lines.join('\n');
+  renderBannerCarousel(data.banners || []);
+}
+
+function renderBannerCarousel(banners) {
+  const root = document.getElementById('bannerCarousel');
+  if (!banners.length) {
+    root.classList.add('hidden');
+    if (state.carouselTimer) clearInterval(state.carouselTimer);
+    return;
+  }
+
+  root.classList.remove('hidden');
+  let index = 0;
+  const show = () => {
+    const b = banners[index % banners.length];
+    root.innerHTML = `<figure><img src="${b.image_url}" alt="${b.title}" /><figcaption>${b.title || ''}</figcaption></figure>`;
+    index += 1;
+  };
+  show();
+  if (state.carouselTimer) clearInterval(state.carouselTimer);
+  state.carouselTimer = setInterval(show, 3000);
 }
 
 async function loadTable(table) {

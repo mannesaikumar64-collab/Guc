@@ -63,6 +63,7 @@ function doGet(e) {
     if (q.action === 'dashboard') return json(ok(getDashboard(getUserFromRequest(e))));
     if (q.action === 'publicHome') return json(ok(getPublicHome()));
     if (q.action === 'verifyCertificate') return json(ok(verifyCertificate(q.certificate_id)));
+    if (q.action === 'verifyReport') return json(ok(verifyReport(q.report_id)));
     if (q.action === 'featureMatrix') return json(ok(FEATURE_MATRIX));
     return json(fail('Unsupported GET action'));
   } catch (err) {
@@ -74,6 +75,7 @@ function doPost(e) {
   try {
     const q = e.parameter || {};
     const payload = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    validateSharedSecret(payload.secret);
     if (q.action === 'login') return json(ok(login(payload)));
 
     const user = getUserFromRequest(e);
@@ -143,16 +145,22 @@ function listRecords(table, q, user) {
   if (q.year_id) rows = rows.filter(r => String(r.year_id) === String(q.year_id));
   if (q.status) rows = rows.filter(r => String(r.status) === String(q.status));
   if (q.active === 'true') rows = rows.filter(r => ['active', 'true', true].includes(r.active) || r.status === 'active');
+  if (table === 'Documents') rows = rows.map(r => applyDocumentAccess(r, user)).filter(Boolean);
   return rows;
 }
 
 function getRecord(table, id, user) {
   enforceTableAccess(user, table, 'read');
-  return getById(table, id);
+  const record = getById(table, id);
+  if (table === 'Documents') return applyDocumentAccess(record, user);
+  return record;
 }
 
 function createRecord(table, payload, user) {
   enforceTableAccess(user, table, 'write');
+  if (table === 'FinancialYears' && isTruthy(payload.is_active)) deactivateOtherFinancialYears('');
+  if (table === 'PoojaBookings') validatePoojaDate(payload.date);
+  if (table === 'Documents') validateDocument(payload);
   const data = stampWithYear(table, payload);
   if (!data.id) data.id = Utilities.getUuid();
   appendRow(table, data);
@@ -162,6 +170,9 @@ function createRecord(table, payload, user) {
 
 function updateRecord(table, id, payload, user) {
   enforceTableAccess(user, table, 'write');
+  if (table === 'FinancialYears' && isTruthy(payload.is_active)) deactivateOtherFinancialYears(id);
+  if (table === 'PoojaBookings' && payload.date) validatePoojaDate(payload.date);
+  if (table === 'Documents') validateDocument(payload);
   const updated = updateById(table, id, payload);
   logAudit(table, id, 'UPDATE', user.username, payload);
   if (table === 'BudgetPlans') saveBudgetVersion(id);
@@ -177,6 +188,7 @@ function deleteRecord(table, id, user) {
 
 function runTransition(payload, user) {
   const { workflow, id, stage, comments } = payload;
+  enforceTransitionStage(stage);
   if (workflow === 'certificate') {
     const data = { id: Utilities.getUuid(), certificate_id: id, stage, approved_by: user.username, approver_role: user.role_name, timestamp: new Date().toISOString(), comments: comments || '' };
     appendRow('CertificateApprovals', data);
@@ -289,6 +301,35 @@ function runCustom(payload, user) {
     return { url, log };
   }
 
+  if (payload.operation === 'sendGroupMessage') {
+    const recipients = Array.isArray(payload.recipients) ? payload.recipients : [];
+    const logs = recipients.map(recipient => {
+      const log = {
+        id: Utilities.getUuid(),
+        channel: payload.channel || 'group',
+        recipient,
+        message: payload.message || '',
+        group_name: payload.group_name || '',
+        timestamp: new Date().toISOString(),
+        status: 'queued',
+        meta_json: JSON.stringify({ group: true })
+      };
+      appendRow('CommunicationLogs', log);
+      return log;
+    });
+    return { sent_count: logs.length, logs };
+  }
+
+  if (payload.operation === 'respondTicket') {
+    const updated = updateById('SupportTickets', payload.ticket_id, {
+      admin_response: payload.admin_response || '',
+      status: payload.status || 'resolved',
+      updated_at: new Date().toISOString()
+    });
+    logAudit('SupportTickets', payload.ticket_id, 'ADMIN_RESPONSE', user.username, updated);
+    return updated;
+  }
+
   throw new Error('Unsupported custom operation');
 }
 
@@ -318,6 +359,57 @@ function verifyCertificate(certificateId) {
   if (!cert) return { status: 'invalid', message: 'Certificate not found' };
   const approvals = readAll('CertificateApprovals').filter(r => r.certificate_id === certificateId);
   return { status: cert.status || 'draft', certificate: cert, approvals };
+}
+
+function verifyReport(reportId) {
+  const report = getById('FinancialReports', reportId);
+  if (!report) return { status: 'invalid', message: 'Report not found' };
+  const approvals = readAll('ReportApprovals').filter(r => r.report_id === reportId);
+  return { status: report.status || 'draft', report, approvals };
+}
+
+function validateSharedSecret(secret) {
+  const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_SHARED_SECRET');
+  if (!expected) return;
+  if (secret !== expected) throw new Error('Invalid API shared secret');
+}
+
+function enforceTransitionStage(stage) {
+  const allowed = ['Draft', 'Review', 'Approved'];
+  if (!allowed.includes(stage)) throw new Error('Invalid workflow stage. Use Draft, Review, or Approved.');
+}
+
+function deactivateOtherFinancialYears(exceptId) {
+  readAll('FinancialYears').forEach(y => {
+    if (String(y.id) !== String(exceptId) && isTruthy(y.is_active)) {
+      updateById('FinancialYears', y.id, { is_active: 'false' });
+    }
+  });
+}
+
+function validatePoojaDate(dateValue) {
+  if (!dateValue) throw new Error('Pooja booking date is required');
+  const control = readAll('PoojaDateControl').find(d => String(d.date) === String(dateValue));
+  if (control && !isTruthy(control.is_open)) throw new Error('Selected pooja date is closed by admin');
+}
+
+function validateDocument(payload) {
+  const allowed = ['pdf', 'doc', 'img'];
+  if (payload.file_type && !allowed.includes(String(payload.file_type).toLowerCase())) {
+    throw new Error('Invalid file_type. Allowed: PDF, DOC, IMG');
+  }
+}
+
+function applyDocumentAccess(record, user) {
+  if (!record) return null;
+  const roles = parseJson(record.access_roles_json);
+  if (!roles.length) return record;
+  if (roles.includes(user.role_name)) return record;
+  return null;
+}
+
+function isTruthy(v) {
+  return v === true || String(v).toLowerCase() === 'true' || String(v) === '1';
 }
 
 function enforceTableAccess(user, table, mode) {

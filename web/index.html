@@ -37,25 +37,26 @@
 
       <div class="card">
         <h3>Public Homepage Feed</h3>
+        <div id="bannerCarousel" class="banner-carousel hidden"></div>
         <div id="homeFeed" class="feed"></div>
       </div>
 
       <div class="card">
         <h3>Module Actions</h3>
         <div class="actions">
-          <button onclick="loadTable('Events')">Events</button>
-          <button onclick="loadTable('Announcements')">Announcements</button>
-          <button onclick="loadTable('Donations')">Donations</button>
-          <button onclick="loadTable('LadduAuctions')">Laddu Auction</button>
-          <button onclick="loadTable('LadduWinners')">Laddu Winners</button>
-          <button onclick="loadTable('BudgetPlans')">Budgets</button>
-          <button onclick="loadTable('Assets')">Assets</button>
-          <button onclick="loadTable('Committee')">Committee</button>
-          <button onclick="loadTable('Mandali')">Mandali</button>
-          <button onclick="loadTable('Volunteers')">Volunteers</button>
-          <button onclick="loadTable('PoojaBookings')">Pooja</button>
-          <button onclick="loadTable('Documents')">Documents</button>
-          <button onclick="loadTable('SupportTickets')">Support</button>
+          <button data-module="Events" onclick="loadTable('Events')">Events</button>
+          <button data-module="Announcements" onclick="loadTable('Announcements')">Announcements</button>
+          <button data-module="Donations" onclick="loadTable('Donations')">Donations</button>
+          <button data-module="LadduAuctions" onclick="loadTable('LadduAuctions')">Laddu Auction</button>
+          <button data-module="LadduWinners" onclick="loadTable('LadduWinners')">Laddu Winners</button>
+          <button data-module="BudgetPlans" onclick="loadTable('BudgetPlans')">Budgets</button>
+          <button data-module="Assets" onclick="loadTable('Assets')">Assets</button>
+          <button data-module="Committee" onclick="loadTable('Committee')">Committee</button>
+          <button data-module="Mandali" onclick="loadTable('Mandali')">Mandali</button>
+          <button data-module="Volunteers" onclick="loadTable('Volunteers')">Volunteers</button>
+          <button data-module="PoojaBookings" onclick="loadTable('PoojaBookings')">Pooja</button>
+          <button data-module="Documents" onclick="loadTable('Documents')">Documents</button>
+          <button data-module="SupportTickets" onclick="loadTable('SupportTickets')">Support</button>
         </div>
       </div>
 

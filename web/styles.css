@@ -76,6 +76,23 @@ button {
   padding: 10px;
 }
 
+.banner-carousel {
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-carousel img {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 6px;
+}
+
 .hidden {
   display: none;
 }
